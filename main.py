@@ -15,11 +15,112 @@
 # limitations under the License.
 #
 import webapp2
+import cgi
 
-class MainHandler(webapp2.RequestHandler):
+form="""
+<form method = "post">
+        	What is your birthday?
+            <br>
+            <label>Month
+            <input type="text" name="month" value="%(month)s">
+            </label>
+            <label>Day
+            <input type="text" name="day" value="%(day)s">
+            </label>
+            <label>Year
+            <input type="text" name="year" value="%(year)s">
+            </label>
+            <div style="color: red">%(error)s</div>
+            <br>
+            <br>
+        	<input type="submit">
+        </form>
+"""
+
+months = ['January',
+          'February',
+          'March',
+          'April',
+          'May',
+          'June',
+          'July',
+          'August',
+          'September',
+          'October',
+          'November',
+          'December']
+          
+#abbreating the months in lower case using a dictionary
+month_abbvs = dict((m[:3].lower(), m) for m in months)
+def valid_month(month):
+    if month:
+        short_month = month[:3].lower()
+        return month_abbvs.get(short_month)
+       #cap_month = month.capitalize()
+       # if cap_month in months:
+           # return cap_month
+
+def valid_day(day):
+    if day and day.isdigit():
+        day = int (day)
+        if day > 0 and day <= 31:
+            return day
+
+def valid_year(year):
+    if year and year.isdigit():
+        year = int (year)
+        if year > 0 and year <= 31:
+            return year
+
+#single string sub
+given_string = "I think %s is a perfectly normal thing to do in public."
+def sub1(s):
+    return given_string %s
+
+#multi string sub
+given_string2 = "I think %s and %s are perfectly normal things to do in public."
+def sub2(s1, s2):
+    return given_string2 % (s1, s2)
+
+#strings used more than once
+given_string2 = "I'm %(nickname)s. My real name is %(name)s, but my friends call me %(nickname)s."
+def sub_m(name, nickname):
+    return given_string2 % {'name' : name, 'nickname' : nickname}
+
+def escape_html(s):
+    return cgi.escape(s, quote=True)
+
+
+
+class MainPage(webapp2.RequestHandler):
+    def write_form(self, error="", month="",day="",year=""):
+        self.response.out.write(form % {"error" : error,
+                                        "month" : escape_html(month),
+                                        "day" : escape_html(day),
+                                        "year" : escape_html(year)})
+
     def get(self):
-        self.response.write('Hello world!')
+        self.write_form()
+
+    def post(self):
+        user_month = self.request.get('month')
+        user_day = self.request.get('day')
+        user_year = self.request.get('year')
+
+        month = valid_month(user_month)
+        day = valid_day(user_day)
+        year = valid_year(user_year)
+
+        if not (month and day and month):
+            self.write_form("That doesn't look valid to me, friend.", user_month, user_day, user_year)
+        else:
+            self.redirect("/thanks")
+
+class ThanksHandler(webapp2.RequestHandler):
+    def get(self):
+        self.response.write("That is a Totally Valid Day!")
 
 app = webapp2.WSGIApplication([
-    ('/', MainHandler)
+    ('/', MainPage),
+    ('/thanks', ThanksHandler)
 ], debug=True)
